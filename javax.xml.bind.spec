@@ -9,6 +9,7 @@ Source1: https://repo1.maven.org/maven2/javax/xml/bind/jaxb-api/%{version}-%{bet
 License: BSD
 BuildRequires: jdk-current
 BuildRequires: javapackages-local
+BuildRequires: javax.activation
 BuildArch: noarch
 
 %description

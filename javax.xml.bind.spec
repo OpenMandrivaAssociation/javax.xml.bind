@@ -15,6 +15,13 @@ BuildArch: noarch
 %description
 An implementation of the javax.xml.bind API
 
+%package javadoc
+Summary: Javadoc documentation for javax.xml.bind
+Group: Development/Java
+
+%description javadoc
+Javadoc documentation for javax.xml.bind
+
 %prep
 %autosetup -p1 -c %{name}-%{version}
 # FIXME how does the version override stuff work properly?
@@ -22,6 +29,10 @@ An implementation of the javax.xml.bind API
 # awkward...
 mv -f META-INF/versions/9/javax/xml/bind/ModuleUtil.java javax/xml/bind/ModuleUtil.java
 rm -rf META-INF/versions
+# Fix javadoc for HTML5
+find . -name "*.java" |xargs sed -i -e 's,<a name=,<a id=,g'
+# @apiNote and @implNote seem to be gone in OpenJDK 12?
+sed -i -e 's,@apiNote,,g;s,@implNote,,g' javax/xml/bind/JAXBContext.java
 
 %build
 . %{_sysconfdir}/profile.d/90java.sh
@@ -29,13 +40,18 @@ export PATH=$JAVA_HOME/bin:$PATH
 
 find . -name "*.java" |xargs javac --add-modules=java.activation,java.desktop -p %{_javadir}
 find javax -name "*.class" -o -name "*.properties" |xargs jar cf javax.xml.bind-%{version}.jar module-info.class META-INF
+javadoc -d docs -sourcepath . --add-modules=java.activation --module-path=$(ls %{_javadir}/javax.activation-*.jar) javax.xml.bind
 cp %{S:1} javax.xml.bind-%{version}.pom
 
 %install
-mkdir -p %{buildroot}%{_javadir} %{buildroot}%{_mavenpomdir}
+mkdir -p %{buildroot}%{_javadir} %{buildroot}%{_mavenpomdir} %{buildroot}%{_javadocdir}
 cp javax.xml.bind-%{version}.jar %{buildroot}%{_javadir}
 cp *.pom %{buildroot}%{_mavenpomdir}/
 %add_maven_depmap javax.xml.bind-%{version}.pom javax.xml.bind-%{version}.jar
+cp -a docs %{buildroot}%{_javadocdir}/%{name}
 
 %files -f .mfiles
 %{_javadir}/*.jar
+
+%files javadoc
+%{_javadocdir}/%{name}
